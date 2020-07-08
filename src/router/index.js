@@ -102,6 +102,13 @@ export const constantRoutes = [
         name: 'Trackview',
         meta: { title: '轨迹查看' },
       },
+      {
+        path: 'associated',
+        component: () => import('@/views/terminalmanagement/information/associatedDIalog'), // Parent router-view
+        name: 'Associated',
+        meta:{title:"关联"},
+        hidden:true
+      },
 
       // 404 page must be placed at the end !!!
       { path: '*', redirect: '/404', hidden: true }

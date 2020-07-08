@@ -8,7 +8,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="用户类型">
+          <el-form-item class="select-input" label="用户类型">
             <el-select v-model="formData.user_type" placeholder="用户类型">
               <el-option
                 v-for="item in user_type_list"
@@ -216,5 +216,10 @@ export default {
 <style lang="scss" scoped>
 ::v-deep .el-dialog__footer {
   text-align: center;
+}
+.select-input{
+  .el-select{
+    width: 100%;
+  }
 }
 </style>
