@@ -419,8 +419,15 @@
 </template>
 
 <script>
-import { QueryCarInfo, UpdateCarInfo } from "./api";
+import {
+  QueryCarInfo,
+  UpdateCarInfo,
+  GetCarInfoDetialBySIM,
+  GetCarPhotosBySIM,
+  DeleteCarPhoto
+} from "./api";
 export default {
+  inject:["reload"],
   name: "Information",
   data() {
     return {
@@ -621,9 +628,10 @@ export default {
       this.selectionList = list;
     },
     handleClick(row) {
-      this.form.terminal_sim = row.terminal_sim;
-      this.form.terminal_id = row.terminal_id;
+      this.terminal_sim = row.terminal_sim;
       this.isShowMain = false;
+      this.getCarInfo();
+      this.getCarImg();
     },
     sizeChange(pageSize) {
       this.pageInfo.pageSize = pageSize;
@@ -660,7 +668,7 @@ export default {
         if (valid) {
           UpdateCarInfo(this.form).then(res => {
             this.$message("关联成功!");
-            this.$router.back(-1);
+            this.reload()
           });
         } else {
           return false;
@@ -678,11 +686,7 @@ export default {
       });
     },
     handleRemove(file, fileList) {
-      axios
-        .post(BaseAPI + "/JT808WebApi/Vehicle/DeleteCarPhoto", {
-          file_id: file.uid,
-          terminal_sim: this.terminal_sim
-        })
+      deletePhoto()
         .then(response => {
           if (response.data) {
             this.carPhotoList = this.carPhotoList.filter(item => {
@@ -703,6 +707,35 @@ export default {
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
+    },
+    getCarImg() {
+      GetCarPhotosBySIM({terminal_sim: this.terminal_sim})
+        .then(response => {
+          if (response) {
+            this.carPhotoList = [];
+            response.forEach((item, index, arr) => {
+              this.carPhotoList.push({
+                name: item.filename,
+                url: item.data_base64,
+                uid: item.file_id
+              });
+            });
+          }
+        })
+        .catch(error => {
+          this.$message(error);
+        });
+    },
+    getCarInfo() {
+      GetCarInfoDetialBySIM({terminal_sim: this.terminal_sim})
+        .then(response => {
+          if (response) {
+            this.form = response;
+          }
+        })
+        .catch(error => {
+          this.$message(error);
+        });
     }
   }
 };
