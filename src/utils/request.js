@@ -9,7 +9,7 @@ if (process.env.NODE_ENV == 'development') {
 } else {
   API_ROOT = `http://map.guojutech.net`
 }
-
+window.API_ROOT = API_ROOT
 // create an axios instance
 const service = axios.create({
   baseURL: API_ROOT, // url = base url + request url

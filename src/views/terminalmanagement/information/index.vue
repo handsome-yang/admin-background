@@ -419,7 +419,7 @@
 </template>
 
 <script>
-import { QueryCarInfo,UpdateCarInfo } from "./api";
+import { QueryCarInfo, UpdateCarInfo } from "./api";
 export default {
   name: "Information",
   data() {
@@ -501,7 +501,7 @@ export default {
         }
       ],
 
-      uploadImgUrl: "/JT808WebApi/Vehicle/UploadCarPhoto",
+      uploadImgUrl: window.API_ROOT + "/JT808WebApi/Vehicle/UploadCarPhoto",
       dialogImageUrl: "",
       dialogVisible: false,
       terminal_sim: "",
@@ -599,17 +599,41 @@ export default {
           console.log(error);
         });
     },
-    sortChange() {},
-    selectionChange() {},
+    sortChange(column) {
+      if (column.prop) {
+        this.pageInfo.orders = [
+          {
+            property: column.prop,
+            direction: column.order == "ascending" ? "asc" : "desc"
+          }
+        ];
+      } else {
+        this.pageInfo.orders = [
+          {
+            property: "ts",
+            direction: "desc"
+          }
+        ];
+      }
+      this.queryTableData();
+    },
+    selectionChange(list) {
+      this.selectionList = list;
+    },
     handleClick(row) {
-      // this.$router.push('/terminalmanagement/associated')
-      // this.$router.push("/terminalmanagement/information/associated");
       this.form.terminal_sim = row.terminal_sim;
-      this.form.terminal_id = row.terminal_id
+      this.form.terminal_id = row.terminal_id;
       this.isShowMain = false;
     },
-    sizeChange() {},
-    currentChange() {},
+    sizeChange(pageSize) {
+      this.pageInfo.pageSize = pageSize;
+      this.pageInfo.page = 1;
+      this.queryTableData();
+    },
+    currentChange(page) {
+      this.pageInfo.page = page;
+      this.queryTableData();
+    },
     resizeTable() {
       let desHeight = document.querySelector(".page-header").offsetHeight;
       let marginBottom = getComputedStyle(
@@ -629,7 +653,7 @@ export default {
     carClose() {
       this.carPhotoList = [];
       this.$refs.upload.clearFiles();
-      this.isShowMain = true
+      this.isShowMain = true;
     },
     save() {
       this.$refs["form"].validate(valid => {
@@ -698,16 +722,16 @@ export default {
   margin-top: 30px;
 }
 
-  ::v-deep .el-input__inner {
-    height: 40px;
-    line-height: 40px;
-  }
-  ::v-deep .el-form-item__label {
-    line-height: 40px;
-    height: 40px;
-  }
+::v-deep .el-input__inner {
+  height: 40px;
+  line-height: 40px;
+}
+::v-deep .el-form-item__label {
+  line-height: 40px;
+  height: 40px;
+}
 .editor {
-  .page-body{
+  .page-body {
     overflow-x: hidden;
   }
   .title {
@@ -715,7 +739,7 @@ export default {
     margin: 15px 0;
   }
 }
-.scrollbar-wrapper{
+.scrollbar-wrapper {
   overflow-x: hidden;
 }
 </style>
