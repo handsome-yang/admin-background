@@ -2,7 +2,7 @@
   "name": "admin-map",
   "version": "4.4.0",
   "description": "",
-  "author": "dejan",
+  "author": "dejan ",
   "scripts": {
     "dev": "vue-cli-service serve",
     "build:prod": "vue-cli-service build",
