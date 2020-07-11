@@ -419,7 +419,7 @@
 </template>
 
 <script>
-import { QueryCarInfo,UpdateCarInfo } from "./api";
+import { QueryCarInfo, UpdateCarInfo } from "./api";
 export default {
   name: "Information",
   data() {
@@ -513,35 +513,35 @@ export default {
         },
         {
           name: "8.7米",
-          value: 8700
+          value: 870
         },
         {
           name: "9.6米",
-          value: 9600
+          value: 960
         },
         {
           name: "11.7米",
-          value: 11700
+          value: 1170
         },
         {
           name: "12.5米",
-          value: 12500
+          value: 1250
         },
         {
           name: "13米",
-          value: 13000
+          value: 1300
         },
         {
           name: "15米",
-          value: 15000
+          value: 1500
         },
         {
           name: "16米",
-          value: 16000
+          value: 1600
         },
         {
           name: "17.5米",
-          value: 17500
+          value: 1750
         }
       ],
       vTypes: [
@@ -605,7 +605,7 @@ export default {
       // this.$router.push('/terminalmanagement/associated')
       // this.$router.push("/terminalmanagement/information/associated");
       this.form.terminal_sim = row.terminal_sim;
-      this.form.terminal_id = row.terminal_id
+      this.form.terminal_id = row.terminal_id;
       this.isShowMain = false;
     },
     sizeChange() {},
@@ -629,7 +629,7 @@ export default {
     carClose() {
       this.carPhotoList = [];
       this.$refs.upload.clearFiles();
-      this.isShowMain = true
+      this.isShowMain = true;
     },
     save() {
       this.$refs["form"].validate(valid => {
@@ -698,16 +698,16 @@ export default {
   margin-top: 30px;
 }
 
-  ::v-deep .el-input__inner {
-    height: 40px;
-    line-height: 40px;
-  }
-  ::v-deep .el-form-item__label {
-    line-height: 40px;
-    height: 40px;
-  }
+::v-deep .el-input__inner {
+  height: 40px;
+  line-height: 40px;
+}
+::v-deep .el-form-item__label {
+  line-height: 40px;
+  height: 40px;
+}
 .editor {
-  .page-body{
+  .page-body {
     overflow-x: hidden;
   }
   .title {
@@ -715,7 +715,7 @@ export default {
     margin: 15px 0;
   }
 }
-.scrollbar-wrapper{
+.scrollbar-wrapper {
   overflow-x: hidden;
 }
 </style>
