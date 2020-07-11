@@ -1,8 +1,12 @@
 <template>
-  <div id="app" class="main">
-    <a @mouseover="drawer = true" class="search">
-      <icon class="el-icon-search"></icon>
-    </a>
+  <div class="wraper-container">
+    <el-button
+      @click="drawer=true"
+      class="btn-drawer"
+      type="info"
+      icon="el-icon-search"
+      circle
+    ></el-button>
     <el-drawer
       ref="drawer"
       title="车辆轨迹查询"
@@ -10,9 +14,12 @@
       size="360"
       :visible.sync="drawer"
       :wrapperClosable="true"
-      direction="ltr"
+      direction="rtl"
       custom-class="demo-drawer"
+      :with-header="false"
     >
+      <p>车辆轨迹查询</p>
+      <el-button size="mini" @click="drawer=false" class="close-btn" icon="el-icon-close" circle></el-button>
       <div class="demo-drawer__content">
         <el-form ref="form" :model="form" :rules="rules" label-width="100px" label-position="top">
           <el-form-item label="选择时间">
@@ -51,11 +58,13 @@
         </div>
       </div>
     </el-drawer>
-    <div id="container"></div>
+    <div id="mapContainer"></div>
   </div>
 </template>
-  <script src="./lib/coordtransform.js"></script>
+ 
 <script>
+import "./lib/dateFormat";
+import { QueryTrack, QuerySIM } from "./api";
 export default {
   name: "TrankView",
   data() {
@@ -139,35 +148,32 @@ export default {
     },
 
     detail() {
-      let _this = this;
 
-      _this.$refs["form"].validate(valid => {
+      this.$refs["form"].validate(valid => {
         if (valid) {
-          // let params = {
-          //     "sim": _this.form.sim,
-          //     "start_time": _this.form.start_time,
-          //     "end_time": _this.form.end_time
-          // };
-          axios
-            .post(
-              "http://39.100.78.242:15004/JT808WebApi/Vehicle/QueryTrack",
-              _this.form
-            )
-            .then(function(response) {
-              if (response.data) {
+          let params = {
+              "sim": this.form.sim,
+              "start_time": this.form.start_time,
+              "end_time": this.form.end_time
+          };
+          QueryTrack(params)
+            .then(response => {
+              console.log(response);
+
+              if (response) {
                 window.pathSimplifierIns.setData([
                   {
-                    name: _this.form.sim,
-                    path: response.data
+                    name: this.form.sim,
+                    path: response
                   }
                 ]);
-                _this.$refs.drawer.closeDrawer();
+                this.$refs.drawer.closeDrawer();
               } else {
-                _this.$message("这辆车没有数据哦！");
+                this.$message("这辆车没有数据哦！");
               }
             })
-            .catch(function(error) {
-              _this.$message(error);
+            .catch(error => {
+              this.$message(error);
               console.log(error);
             });
         } else {
@@ -176,120 +182,114 @@ export default {
       });
     },
     queryCarList() {
-      let _this = this;
-      axios
-        .post("http://39.100.78.242:15004/JT808WebApi/Vehicle/QuerySIM")
+      QuerySIM()
         .then(response => {
-          if (response.data) {
-            _this.simList = response.data;
+          if (response) {
+            this.simList = response;
           } else {
-            _this.$message("这辆车没有数据哦！");
+            this.$message("这辆车没有数据哦！");
           }
         })
         .catch(error => {
-          _this.$message(error);
-          console.log(error);
+          this.$message(error);
         });
+    },
+    initMap() {
+      //创建地图
+      var map = new AMap.Map("mapContainer", {
+        zoom: 4
+      });
+
+      AMapUI.load(["ui/misc/PathSimplifier", "lib/$"], function(
+        PathSimplifier,
+        $
+      ) {
+        if (!PathSimplifier.supportCanvas) {
+          alert("当前环境不支持 Canvas！");
+          return;
+        }
+        var pathSimplifierIns = new PathSimplifier({
+          zIndex: 100,
+          autoSetFitView: true,
+          map: map, //所属的地图实例
+          getPath: function(pathData, pathIndex) {
+            let points = pathData.path,
+              lnglatList = [];
+            for (let i = 0, len = points.length; i < len; i++) {
+              var wgs84togcj02 = coordtransform.wgs84togcj02(
+                points[i].longitude,
+                points[i].latitude
+              );
+              lnglatList.push(wgs84togcj02);
+            }
+            return lnglatList;
+          },
+          getHoverTitle: function(pathData, pathIndex, pointIndex) {
+            if (pointIndex >= 0) {
+              //point
+              return (
+                pathData.name + "," + JSON.stringify(pathData.path[pointIndex])
+              );
+            }
+            return pathData.name + "，点数量" + pathData.path.length;
+          },
+          renderOptions: {
+            pathLineStyle: {
+              strokeStyle: "#3dc115",
+              lineWidth: 6,
+              dirArrowStyle: true
+            },
+            renderAllPointsIfNumberBelow: 3000 //绘制路线节点，如不需要可设置为-1
+          }
+        });
+        window.pathSimplifierIns = pathSimplifierIns;
+        //设置数据
+
+        //对第一条线路（即索引 0）创建一个巡航器
+        // var navg1 = pathSimplifierIns.createPathNavigator(0, {
+        //     loop: true, //循环播放
+        //     speed: 1000000 //巡航速度，单位千米/小时
+        // });
+        // navg1.start();
+      });
     }
   },
-  mounted: function() {
+  mounted() {
+    this.initMap();
     this.queryCarList();
   },
   created() {
-    /**
-     * 时间格式化
-     *  年 yyyy
-     *  月 M 前面不补0；MM  前面补0
-     *  日 d 前面不补0；dd  前面补0
-     *  时 H 前面补补0；HH  前面补0
-     *  分 m 前面不补0；mm  前面补0
-     *  秒 s 前面不补0；ss  前面补0
-     *  季度
-     *  毫秒
-     * @param fmt
-     * @returns {string}
-     */
-    Date.prototype.formatToString = function(fmt) {
-      //author: meizz
-      let o = {
-        "M+": this.getMonth() + 1, //月份
-        "d+": this.getDate(), //日
-        "H+": this.getHours(), //小时
-        "m+": this.getMinutes(), //分
-        "s+": this.getSeconds(), //秒
-        "q+": Math.floor((this.getMonth() + 3) / 3), //季度
-        S: this.getMilliseconds() //毫秒
-      };
-      if (/(y+)/.test(fmt))
-        fmt = fmt.replace(
-          RegExp.$1,
-          (this.getFullYear() + "").substr(4 - RegExp.$1.length)
-        );
-      for (let k in o)
-        if (new RegExp("(" + k + ")").test(fmt))
-          fmt = fmt.replace(
-            RegExp.$1,
-            RegExp.$1.length == 1
-              ? o[k]
-              : ("00" + o[k]).substr(("" + o[k]).length)
-          );
-      return fmt;
-    };
   }
 };
 </script>
-<script>
-//创建地图
-var map = new AMap.Map("container", {
-  zoom: 4
-});
-AMapUI.load(["ui/misc/PathSimplifier", "lib/$"], function(PathSimplifier, $) {
-  if (!PathSimplifier.supportCanvas) {
-    alert("当前环境不支持 Canvas！");
-    return;
-  }
-  var pathSimplifierIns = new PathSimplifier({
-    zIndex: 100,
-    autoSetFitView: true,
-    map: map, //所属的地图实例
-    getPath: function(pathData, pathIndex) {
-      let points = pathData.path,
-        lnglatList = [];
-      for (let i = 0, len = points.length; i < len; i++) {
-        var wgs84togcj02 = coordtransform.wgs84togcj02(
-          points[i].longitude,
-          points[i].latitude
-        );
-        lnglatList.push(wgs84togcj02);
-      }
-      return lnglatList;
-    },
-    getHoverTitle: function(pathData, pathIndex, pointIndex) {
-      if (pointIndex >= 0) {
-        //point
-        return pathData.name + "," + JSON.stringify(pathData.path[pointIndex]);
-      }
-      return pathData.name + "，点数量" + pathData.path.length;
-    },
-    renderOptions: {
-      pathLineStyle: {
-        strokeStyle: "#3dc115",
-        lineWidth: 6,
-        dirArrowStyle: true
-      },
-      renderAllPointsIfNumberBelow: 3000 //绘制路线节点，如不需要可设置为-1
-    }
-  });
-  window.pathSimplifierIns = pathSimplifierIns;
-  //设置数据
 
-  //对第一条线路（即索引 0）创建一个巡航器
-  // var navg1 = pathSimplifierIns.createPathNavigator(0, {
-  //     loop: true, //循环播放
-  //     speed: 1000000 //巡航速度，单位千米/小时
-  // });
-  // navg1.start();
-});
-</script>
 <style lang="scss" scoped>
+.wraper-container {
+  height: calc(100vh - 50px);
+  .el-drawer__wrapper {
+    top: 52px;
+  }
+  .btn-drawer{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 9;
+  }
+}
+#mapContainer {
+  height: inherit;
+}
+::v-deep .demo-drawer {
+  padding: 10px;
+}
+
+::v-deep .demo-drawer__footer {
+  text-align: center;
+  margin-top: 30px;
+}
+.close-btn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
 </style>

@@ -419,8 +419,15 @@
 </template>
 
 <script>
-import { QueryCarInfo, UpdateCarInfo } from "./api";
+import {
+  QueryCarInfo,
+  UpdateCarInfo,
+  GetCarInfoDetialBySIM,
+  GetCarPhotosBySIM,
+  DeleteCarPhoto
+} from "./api";
 export default {
+  inject:["reload"],
   name: "Information",
   data() {
     return {
@@ -501,49 +508,42 @@ export default {
         }
       ],
 
-      uploadImgUrl: "/JT808WebApi/Vehicle/UploadCarPhoto",
+      uploadImgUrl: window.API_ROOT + "/JT808WebApi/Vehicle/UploadCarPhoto",
       dialogImageUrl: "",
       dialogVisible: false,
       terminal_sim: "",
       carPhotoList: [],
       carLength: [
-        {
-          name: "未知",
-          value: 0
-        },
-        {
-          name: "8.7米",
-          value: 870
-        },
-        {
-          name: "9.6米",
-          value: 960
-        },
-        {
-          name: "11.7米",
-          value: 1170
-        },
-        {
-          name: "12.5米",
-          value: 1250
-        },
-        {
-          name: "13米",
-          value: 1300
-        },
-        {
-          name: "15米",
-          value: 1500
-        },
-        {
-          name: "16米",
-          value: 1600
-        },
-        {
-          name: "17.5米",
-          value: 1750
-        }
-      ],
+                {
+                    name:'未知',
+                    value:0
+                },
+                {
+                    name:'8.7米',
+                    value:870
+                },{
+                    name:'9.6米',
+                    value:960
+                },{
+                    name:'11.7米',
+                    value:1170
+                },{
+                    name:'12.5米',
+                    value:1250
+                },{
+                    name:'13米',
+                    value:1300
+                },{
+                    name:'15米',
+                    value:1500
+                },{
+                    name:'16米',
+                    value:1600
+                },{
+                    name:'17.5米',
+                    value:1750
+                }
+            ],
       vTypes: [
         "重型半挂牵引车",
         "重型全挂牵引车",
@@ -599,17 +599,42 @@ export default {
           console.log(error);
         });
     },
-    sortChange() {},
-    selectionChange() {},
-    handleClick(row) {
-      // this.$router.push('/terminalmanagement/associated')
-      // this.$router.push("/terminalmanagement/information/associated");
-      this.form.terminal_sim = row.terminal_sim;
-      this.form.terminal_id = row.terminal_id;
-      this.isShowMain = false;
+    sortChange(column) {
+      if (column.prop) {
+        this.pageInfo.orders = [
+          {
+            property: column.prop,
+            direction: column.order == "ascending" ? "asc" : "desc"
+          }
+        ];
+      } else {
+        this.pageInfo.orders = [
+          {
+            property: "ts",
+            direction: "desc"
+          }
+        ];
+      }
+      this.queryTableData();
     },
-    sizeChange() {},
-    currentChange() {},
+    selectionChange(list) {
+      this.selectionList = list;
+    },
+    handleClick(row) {
+      this.terminal_sim = row.terminal_sim;
+      this.isShowMain = false;
+      this.getCarInfo();
+      this.getCarImg();
+    },
+    sizeChange(pageSize) {
+      this.pageInfo.pageSize = pageSize;
+      this.pageInfo.page = 1;
+      this.queryTableData();
+    },
+    currentChange(page) {
+      this.pageInfo.page = page;
+      this.queryTableData();
+    },
     resizeTable() {
       let desHeight = document.querySelector(".page-header").offsetHeight;
       let marginBottom = getComputedStyle(
@@ -636,7 +661,7 @@ export default {
         if (valid) {
           UpdateCarInfo(this.form).then(res => {
             this.$message("关联成功!");
-            this.$router.back(-1);
+            this.reload()
           });
         } else {
           return false;
@@ -654,11 +679,7 @@ export default {
       });
     },
     handleRemove(file, fileList) {
-      axios
-        .post(BaseAPI + "/JT808WebApi/Vehicle/DeleteCarPhoto", {
-          file_id: file.uid,
-          terminal_sim: this.terminal_sim
-        })
+      deletePhoto()
         .then(response => {
           if (response.data) {
             this.carPhotoList = this.carPhotoList.filter(item => {
@@ -679,6 +700,35 @@ export default {
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
+    },
+    getCarImg() {
+      GetCarPhotosBySIM({terminal_sim: this.terminal_sim})
+        .then(response => {
+          if (response) {
+            this.carPhotoList = [];
+            response.forEach((item, index, arr) => {
+              this.carPhotoList.push({
+                name: item.filename,
+                url: item.data_base64,
+                uid: item.file_id
+              });
+            });
+          }
+        })
+        .catch(error => {
+          this.$message(error);
+        });
+    },
+    getCarInfo() {
+      GetCarInfoDetialBySIM({terminal_sim: this.terminal_sim})
+        .then(response => {
+          if (response) {
+            this.form = response;
+          }
+        })
+        .catch(error => {
+          this.$message(error);
+        });
     }
   }
 };

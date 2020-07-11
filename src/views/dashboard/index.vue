@@ -25,9 +25,9 @@
           <el-link
             class="editor-password"
             @click="editorPassword(scope.row)"
-            icon="el-icon-edit"
+            icon="el-icon-lock"
           >修改密码</el-link>
-          <el-link @click="updataUserStatus(scope.row)" icon="el-icon-edit">删除</el-link>
+          <el-link @click="updataUserStatus(scope.row)" icon="el-icon-delete">删除</el-link>
         </template>
       </el-table-column>
     </el-table>
